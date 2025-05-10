@@ -1,0 +1,123 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model categoria {
+  id_categoria              Int                         @id @default(autoincrement())
+  nombre_categoria          String                      @unique @db.VarChar(100)
+  descripcion               String?                     @default("Sin descripción")
+  libro                     libro[]
+  usuario_categoria_interes usuario_categoria_interes[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model editorial {
+  id_editorial   Int     @id @default(autoincrement())
+  nombre         String  @unique @db.VarChar(100)
+  pais           String  @db.VarChar(50)
+  anio_fundacion Int?
+  libro          libro[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model historial_acceso {
+  id_acceso      Int       @id @default(autoincrement())
+  id_usuario     Int
+  id_libro       Int
+  fecha_consulta DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
+  tipo_acceso    String?   @db.VarChar(20)
+  libro          libro     @relation(fields: [id_libro], references: [id_libro], onDelete: NoAction, onUpdate: NoAction)
+  usuario        usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model libro {
+  id_libro         Int                @id @default(autoincrement())
+  titulo           String             @db.VarChar(255)
+  isbn             String             @unique @db.VarChar(20)
+  anio_publicacion Int?
+  idioma           String             @db.VarChar(50)
+  resumen          String?
+  autores          String[]
+  id_editorial     Int
+  id_categoria     Int
+  historial_acceso historial_acceso[]
+  categoria        categoria          @relation(fields: [id_categoria], references: [id_categoria], onDelete: NoAction, onUpdate: NoAction)
+  editorial        editorial          @relation(fields: [id_editorial], references: [id_editorial], onDelete: NoAction, onUpdate: NoAction)
+  unidadlibro      unidadlibro[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model prestamo {
+  id_prestamo          Int                    @id @default(autoincrement())
+  fecha_prestamo       DateTime               @default(dbgenerated("CURRENT_DATE")) @db.Date
+  fecha_entrega        DateTime?              @db.Date
+  id_usuario           Int
+  estado_prestamo      String                 @db.VarChar(20)
+  usuario              usuario                @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction)
+  prestamo_unidadlibro prestamo_unidadlibro[]
+}
+
+model prestamo_unidadlibro {
+  id_prestamo Int
+  id_unidad   Int
+  prestamo    prestamo    @relation(fields: [id_prestamo], references: [id_prestamo], onDelete: NoAction, onUpdate: NoAction)
+  unidadlibro unidadlibro @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id_prestamo, id_unidad])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reserva {
+  id_reserva     Int         @id @default(autoincrement())
+  fecha_reserva  DateTime?   @default(dbgenerated("CURRENT_DATE")) @db.Date
+  estado_reserva String      @db.VarChar(20)
+  id_usuario     Int
+  id_unidad      Int
+  unidadlibro    unidadlibro @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction)
+  usuario        usuario     @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model unidadlibro {
+  id_unidad            Int                    @id @default(autoincrement())
+  codigo_barra         String                 @unique @db.VarChar(30)
+  id_libro             Int
+  ubicacion_fisica     String                 @db.VarChar(100)
+  estado_fisico        String                 @db.VarChar(50)
+  prestamo_unidadlibro prestamo_unidadlibro[]
+  reserva              reserva[]
+  libro                libro                  @relation(fields: [id_libro], references: [id_libro], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model usuario {
+  id_usuario                Int                         @id @default(autoincrement())
+  nombre                    String                      @db.VarChar(100)
+  apellido                  String                      @db.VarChar(100)
+  email                     String                      @unique @db.VarChar(150)
+  telefono                  String                      @unique @db.VarChar(20)
+  direccion                 String
+  tipo_usuario              String                      @db.VarChar(20)
+  historial_acceso          historial_acceso[]
+  prestamo                  prestamo[]
+  reserva                   reserva[]
+  usuario_categoria_interes usuario_categoria_interes[]
+}
+
+model usuario_categoria_interes {
+  id_usuario   Int
+  id_categoria Int
+  categoria    categoria @relation(fields: [id_categoria], references: [id_categoria], onDelete: NoAction, onUpdate: NoAction)
+  usuario      usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id_usuario, id_categoria])
+}

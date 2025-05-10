@@ -1,32 +1,23 @@
+
+
 const express = require('express');
-const { PrismaClient } = require('./generated/prisma');
+const {
+  reporteHistorialAccesos,
+  reportePrestamos,
+  reporteLibrosMasPrestados,
+  reporteReservasActivas,
+  reporteUsuariosActivos
+} = require('./controllers/reportes.controller');
 
 const app = express();
-const prisma = new PrismaClient();
-
 app.use(express.json());
 
-app.get('/categorias', async (req, res) => {
-  try {
-    const categorias = await prisma.categoria.findMany();
-    res.json(categorias);
-  } catch (err) {
-    console.error('Error al obtener categorías:', err);
-    res.status(500).json({ error: 'Error al consultar categorías' });
-  }
-});
-
-app.get('/tabla/:nombre', async (req, res) => {
-  const { nombre } = req.params;
-
-  try {
-    const datos = await prisma[nombre].findMany();
-    res.json(datos);
-  } catch (err) {
-    console.error(`Error al consultar la tabla '${nombre}':`, err);
-    res.status(500).json({ error: `Tabla '${nombre}' no encontrada o consulta fallida` });
-  }
-});
+// Rutas de reportes (coinciden con tus controladores)
+app.get('/reportes/historial-accesos',    reporteHistorialAccesos);
+app.get('/reportes/prestamos',             reportePrestamos);
+app.get('/reportes/libros-mas-prestados',  reporteLibrosMasPrestados);
+app.get('/reportes/reservas-activas',      reporteReservasActivas);
+app.get('/reportes/usuarios-activos',      reporteUsuariosActivos);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

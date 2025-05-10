@@ -1,13 +1,26 @@
+# Imagen base con Node.js
 FROM node:18
 
+# Directorio de trabajo dentro del contenedor
 WORKDIR /app
 
+# Copia solo package.json y package-lock.json primero para aprovechar la caché
 COPY package*.json ./
+
+# Instala TODAS las dependencias, incluyendo devDependencies como Prisma
 RUN npm install
 
+# Copia todo el proyecto al contenedor
 COPY . .
 
+# Asegura permisos completos para evitar errores tipo "permission denied"
+RUN chmod -R 777 /app
+
+# Genera el cliente Prisma compatible con Linux
 RUN npx prisma generate
 
+# Expone el puerto de la app
+EXPOSE 3000
 
+# Comando para iniciar el servidor
 CMD ["node", "index.js"]
